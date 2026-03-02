@@ -1,0 +1,44 @@
+# Dependencies
+node_modules/
+*/node_modules/
+
+# Build outputs
+dist/
+build/
+*.log
+npm-debug.log*
+
+# Local environment files
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local development files (not needed for Railway)
+docker-compose.yml
+Dockerfile.backend
+Dockerfile.frontend
+*.ps1
+*.bat
+start-dashboard.bat
+create-shortcut.ps1
+check-shortcut.ps1
+
+# Docs (optional - keep if needed)
+# *.md
+
+# Dev containers
+.devcontainer/
+
+# Database (will be created fresh in container)
+*.db
+productivity.db
