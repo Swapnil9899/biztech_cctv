@@ -1,26 +1,61 @@
-FROM node:20-slim
+# Stage 1: Build the frontend
+FROM node:18-alpine AS frontend-builder
 
 WORKDIR /app
 
-# Copy backend files
-COPY backend/package*.json /app/backend/
-WORKDIR /app/backend
-RUN npm install
-
-# Copy frontend files
-COPY frontend/package*.json /app/frontend/
+# Copy frontend package files first for caching
+COPY frontend/package*.json ./frontend/
 WORKDIR /app/frontend
 RUN npm install
 
-# Copy application code
+# Copy frontend source and build
 WORKDIR /app
-COPY backend/ /app/backend/
-COPY frontend/ /app/frontend/
-COPY SPEC.md /app/
-COPY README.md /app/
+COPY frontend/vite.config.ts ./frontend/
+COPY frontend/index.html ./frontend/
+COPY frontend/tsconfig.json ./frontend/
+COPY frontend/tsconfig.node.json ./frontend/
+COPY frontend/src ./frontend/src/
 
-# Expose ports
-EXPOSE 8000 3000
+WORKDIR /app/frontend
+RUN npm run build
 
-# Start backend and frontend
-CMD ["sh", "-c", "cd /app/backend && node server.js & cd /app/frontend && npm run dev"]
+# Stage 2: Setup backend
+FROM node:18-alpine AS backend-setup
+
+WORKDIR /app
+
+# Copy backend package files
+COPY backend/package*.json ./backend/
+WORKDIR /app/backend
+RUN npm install --production
+
+# Copy backend source
+WORKDIR /app
+COPY backend/server.js ./backend/
+COPY backend/requirements.txt ./backend/
+
+# Stage 3: Final production image
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Install nginx for serving frontend
+RUN apk add --no-cache nginx
+
+# Copy backend from stage 2
+COPY --from=backend-setup /app/backend ./backend
+
+# Copy built frontend from stage 1
+COPY --from=frontend-builder /app/frontend/dist ./dist
+
+# Copy nginx configuration
+COPY nginx.conf /etc/nginx/http.d/default.conf
+
+# Change to backend directory to run server
+WORKDIR /app/backend
+
+# Expose port
+EXPOSE 8080
+
+# Start nginx in background and run backend
+CMD sh -c "node server.js & nginx -g 'daemon off;'"
