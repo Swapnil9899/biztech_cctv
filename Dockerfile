@@ -32,7 +32,6 @@ RUN npm install --production
 # Copy backend source
 WORKDIR /app
 COPY backend/server.js ./backend/
-COPY backend/requirements.txt ./backend/
 
 # Stage 3: Final production image
 FROM node:18-alpine
